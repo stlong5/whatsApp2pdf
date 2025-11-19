@@ -1,0 +1,32 @@
+{
+  "background_color": "#EAE6DF",
+  "background_image": "../assets/themes/light/light.png",
+  "bubble": {
+    "color": "#D9FDD3",
+    "color_other": "#FFFFFF",
+    "max_width_percent": 0.65,
+    "margin_top": 3,
+    "margin_bottom": 3,
+    "padding_left": 7,
+    "padding_right": 7,
+    "padding_top": 6,
+    "padding_bottom": 6,
+    "radius": 7.5
+  },
+  "fonts": {
+    "color": "#111B21",
+    "family": "Helvetica",
+    "size": 14
+  },
+  "layout": {
+    "margin_left": 120,
+    "margin_right": 120,
+    "margin_top": 96,
+    "margin_bottom": 96
+  },
+  "watermark" : {
+    "size": 12,
+    "style": "Tiled",
+    "text": "CONFIDENTIAL"
+  }
+}

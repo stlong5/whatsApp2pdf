@@ -1,0 +1,28 @@
+{
+  "name": "whatsapp-to-pdf",
+  "version": "1.0.0",
+  "description": "Convert WhatsApp chat exports to PDF",
+  "main": "index.js",
+  "bin": {
+    "whatsapp-pdf": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "adm-zip": "0.5.16",
+    "commander": "14.0.1",
+    "pdfkit": "0.17.2",
+    "sharp": "0.34.5"
+  },
+  "keywords": [
+    "whatsapp",
+    "pdf",
+    "chat",
+    "export",
+    "converter"
+  ],
+  "author": "stlong5",
+  "license": "MIT"
+}

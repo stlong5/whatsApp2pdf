@@ -1,0 +1,32 @@
+{
+  "background_color": "#0A1014",
+  "background_image": "../assets/themes/dark/dark.png",
+  "bubble": {
+    "color": "#144D37",
+    "color_other": "#233138",
+    "max_width_percent": 0.65,
+    "margin_top": 3,
+    "margin_bottom": 3,
+    "padding_left": 7,
+    "padding_right": 7,
+    "padding_top": 6,
+    "padding_bottom": 6,
+    "radius": 7.5
+  },
+  "fonts": {
+    "color": "#F7F8FA",
+    "family": "Helvetica",
+    "size": 14
+  },
+  "layout": {
+    "margin_left": 120,
+    "margin_right": 120,
+    "margin_top": 96,
+    "margin_bottom": 96
+  },
+  "watermark" : {
+    "size": 60,
+    "style": "Centered",
+    "text": "CONFIDENTIAL"
+  }
+}
