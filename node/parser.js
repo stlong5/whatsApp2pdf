@@ -1,5 +1,5 @@
 const AdmZip = require("adm-zip");
-const {detectPlatform, parseDateTime, detectMessageType} = require("./utils");
+const { detectPlatform, parseDateTime, detectMessageType } = require("./utils");
 
 class WhatsAppParser {
     constructor(zipPath) {
@@ -19,11 +19,17 @@ class WhatsAppParser {
 
     // Define common WhatsApp media and document extensions
     static MEDIA_EXTENSIONS = [
-        ".jpg", ".jpeg", ".png", ".gif", ".webp", // Images
-        ".mp4", ".3gp", ".mov",                   // Videos
-        ".opus", ".m4a", ".aac", ".amr",          // Audio
-        ".pdf", ".doc", ".docx", ".xls", ".xlsx", // Documents
-        ".txt",                                   // User-shared text documents
+        // Images (Common & Sharp-supported - JPG, PNG, GIF, WebP, TIFF, SVG, HEIC, AVIF, BMP)
+        ".jpg", ".jpeg", ".png", ".gif", ".webp", ".tif", ".tiff", ".heic", ".heif", ".avif", ".svg", ".bmp",
+
+        // Videos
+        ".mp4", ".3gp", ".mov", ".m4v", ".avi", ".mkv",
+
+        // Audio
+        ".opus", ".m4a", ".aac", ".mp3", ".amr", ".ogg", ".wav", ".flac",
+
+        // Documents/Other (PDF, Office, Text, VCF contact cards, Archives)
+        ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".vcf", ".zip", ".rar", ".7z"
     ];
 
     async parse() {

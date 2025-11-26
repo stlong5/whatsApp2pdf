@@ -2,7 +2,9 @@ const fs = require("fs");
 const path = require("path");
 const WhatsAppParser = require("./parser");
 const PDFRenderer = require("./renderer");
-const { loadTheme, detectMessageType } = require("./utils");
+const { loadTheme, detectMessageType, formatFileSize } = require("./utils");
+const output = path.join(__dirname, "./assets/output/%.pdf");
+const themes = path.join(__dirname, "./assets/themes/%/%.json");
 
 // Test data
 const sampleMessages = [
@@ -24,8 +26,8 @@ async function runTests() {
     // Test 1: Theme Loading
     console.log(`\nTest 1: Loading Themes...`);
     try {
-        const lightTheme = loadTheme(path.join(__dirname, "../assets/themes/light/light.json"));
-        const darkTheme = loadTheme(path.join(__dirname, "../assets/themes/dark/dark.json"));
+        const lightTheme = loadTheme(themes.replaceAll("%", "light"));
+        const darkTheme = loadTheme(themes.replaceAll("%", "dark"));
 
         if (lightTheme && darkTheme) {
             console.info(`PASSED: Themes loaded successfully`);
@@ -67,8 +69,8 @@ async function runTests() {
     console.log(`\nTest 3: PDF Generation...`);
     try {
         console.time("Time");
-        const testOutputPath = path.join(__dirname, "../assets/output/test.pdf");
-        const theme = loadTheme(path.join(__dirname, "../assets/themes/light/light.json"));
+        const testOutputPath = output.replaceAll("%", "test");
+        const theme = loadTheme(themes.replaceAll("%", "light"));
         const renderer = new PDFRenderer(theme);
         const contacts = [...new Set(sampleMessages.map(m => m.sender))].sort();
 
@@ -93,8 +95,7 @@ async function runTests() {
         });
 
         if (fs.existsSync(testOutputPath)) {
-            const stats = fs.statSync(testOutputPath);
-            console.info(`PASSED: PDF generated (${(stats.size / 1024).toFixed(2)} KB)`);
+            console.info(`PASSED: PDF generated (${formatFileSize(fs.statSync(testOutputPath).size)})!`);
             console.info(`Output: ${testOutputPath}`);
             console.timeEnd("Time");
             passed++;
@@ -111,8 +112,8 @@ async function runTests() {
     console.log(`\nTest 4: Privacy Mode (Sealed)...`);
     try {
         console.time("Time");
-        const testOutputPath = path.join(__dirname, "../assets/output/test_sealed.pdf");
-        const theme = loadTheme(path.join(__dirname, "../assets/themes/dark/dark.json"));
+        const testOutputPath = output.replaceAll("%", "test_sealed");
+        const theme = loadTheme(themes.replaceAll("%", "dark"));
         const renderer = new PDFRenderer(theme);
         const contacts = [...new Set(sampleMessages.map(m => m.sender))].sort();
 
@@ -137,8 +138,7 @@ async function runTests() {
         });
 
         if (fs.existsSync(testOutputPath)) {
-            const stats = fs.statSync(testOutputPath);
-            console.info(`PASSED: PDF generated (${(stats.size / 1024).toFixed(2)} KB)`);
+            console.info(`PASSED: PDF generated (${formatFileSize(fs.statSync(testOutputPath).size)})!`);
             console.info(`Output: ${testOutputPath}`);
             console.timeEnd("Time");
             passed++;

@@ -1,20 +1,26 @@
-const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
+const PDFDocument = require("pdfkit");
+const {detectBackgroundImage} = require("./utils");
 const author = "stlong5";
 const authorLink = "https://github.com/stlong5/whatsApp2pdf";
 const now = new Date();
 const fonts = ["Courier", "Courier-Bold", "Courier-Oblique", "Courier-BoldOblique", "Helvetica", "Helvetica-Bold", "Helvetica-Oblique", "Helvetica-BoldOblique", "Times-Roman", "Times-Bold", "Times-Italic", "Times-BoldItalic", "Symbol", "ZapfDingbats"];
 const fontsExtra = [
-    {name: "Emoji", file: "../assets/fonts/NotoEmoji.ttf", regex: /\p{Extended_Pictographic}/u},
-    {name: "Japanese", file: "../assets/fonts/NotoSansJP.ttf", regex: /[\u3040-\u309F\u30A0-\u30FF\u31F0-\u31FF]/u},              // Hiragana, Katakana, Kanji
-    {name: "Korean", file: "../assets/fonts/NotoSansKR.ttf", regex: /[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7AF]/u},                // Hangul, Jamo
-    {name: "Chinese", file: "../assets/fonts/NotoSansSC.ttf", regex: /[\u3000-\u303F\u3400-\u4DBF\u4E00-\u9FFF\uFF00-\uFFEF]/u},  // Chinese (Simplified, Traditional)
+    {name: "Emoji", file: "./assets/fonts/NotoEmoji.ttf", regex: /\p{Extended_Pictographic}/u},
+    {name: "Japanese", file: "./assets/fonts/NotoSansJP.ttf", regex: /[\u3040-\u309F\u30A0-\u30FF\u31F0-\u31FF]/u},              // Hiragana, Katakana, Kanji
+    {name: "Korean", file: "./assets/fonts/NotoSansKR.ttf", regex: /[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7AF]/u},                // Hangul, Jamo
+    {
+        name: "Chinese",
+        file: "./assets/fonts/NotoSansSC.ttf",
+        regex: /[\u3000-\u303F\u3400-\u4DBF\u4E00-\u9FFF\uFF00-\uFFEF]/u
+    },  // Chinese (Simplified, Traditional)
 ];
 
 class PDFRenderer {
     constructor(theme = {}) {
+        this.charCache = {}
         this.theme = theme;
 
         // A4 size in points (72 points = 1 inch)
@@ -35,6 +41,7 @@ class PDFRenderer {
         this.backgrounds = {
             color: String(this.theme?.background_color ?? "#EAE6DF"),
             image: String(this.theme?.background_image ?? ""),
+            ext: String(this.theme?.background_image_ext ?? ""),
             height: Number(this.pageHeight - this.margins.top - this.margins.bottom),   // content max height
             width: Number(this.pageWidth - this.margins.left - this.margins.right)      // content max width
         };
@@ -69,6 +76,17 @@ class PDFRenderer {
             let stream = null;
 
             try {
+                // Ensure output folder exists
+                fs.mkdirSync(path.dirname(outputPath), {recursive: true});
+
+                // Update the background image to sharp buffer
+                if (this.backgrounds.image) {
+                    this.backgrounds = await detectBackgroundImage(this.backgrounds, this.theme.path);
+                    this.backgrounds.image = await sharp(this.backgrounds.image)
+                        .png({quality: 80, palette: true, effort: 1})
+                        .toBuffer();
+                }
+
                 // Create PDF document
                 doc = new PDFDocument({
                     size: "A4",
@@ -167,16 +185,11 @@ class PDFRenderer {
             .fill(this.backgrounds.color);
 
         // Add background image if it exists
-        const bgImagePath = path.join(__dirname, this.backgrounds.image);
-        if (this.backgrounds.image && fs.existsSync(bgImagePath)) {
-            try {
-                doc.image(bgImagePath, 0, 0, {
-                    width: this.pageWidth,
-                    height: this.pageHeight
-                });
-            } catch (e) {
-                console.warn(`Warning: Could not load background image`, e.message);
-            }
+        if (this.backgrounds.image) {
+            doc.image(this.backgrounds.image, 0, 0, {
+                width: this.pageWidth,
+                height: this.pageHeight
+            });
         }
 
         doc.restore();
@@ -297,7 +310,7 @@ class PDFRenderer {
         // Check if we need a new page
         if (Number(yPos + senderHeight + bubbleHeight + timeHeight) > this.pageHeight - this.margins.bottom) {
             // font will reset after add new page
-            doc.addPage();
+            doc.addPage().fontSize(this.fonts.size * 0.8).fillColor(this.fonts.color).fillOpacity(0.8);
             yPos = this.margins.top;
         }
 
@@ -392,11 +405,7 @@ class PDFRenderer {
             }
 
             for (const char of [...word]) {
-                const match = fontsExtra.find(fe => fe.regex.test(String(char)));
-                const fontKey = match ? match.name : this.fonts.family;
-                doc.font(fontKey);
-
-                const width = doc.widthOfString(char);
+                const {width, fontKey} = this._getCacheWords(doc, char);
 
                 if (!inline && (currentX > this.bubbleMaxWidth)) {
                     currentX = 0;
@@ -414,12 +423,25 @@ class PDFRenderer {
 
                 currentX += width;
                 maxLineWidth = Math.max(maxLineWidth, currentX);
-
-                doc.font(this.fonts.family);
             }
         }
 
         return {lines, totalHeight: currentY + lineHeight, totalWidth: maxLineWidth};
+    }
+
+    _getCacheWords(doc, text) {
+        const match = fontsExtra.find(fe => fe.regex.test(text));
+        const fontKey = match ? match.name : this.fonts.family;
+        const key = `${fontKey}::${doc._fontSize}::${text}`;
+
+        if (this.charCache[key]) return this.charCache[key];
+
+        doc.font(fontKey);
+        const width = doc.widthOfString(text);
+        this.charCache[key] = {width, fontKey};
+        doc.font(this.fonts.family);
+
+        return {width, fontKey};
     }
 
     _layoutMediaPlaceholder(doc, message) {
@@ -536,23 +558,8 @@ class PDFRenderer {
 
             try {
                 // handle images
-                if (![".jpg", ".jpeg", ".png", ".gif", ".webp"].includes(ext)) continue;
-
-                let imageBuffer = data;
-                if ([".gif", ".webp"].includes(ext)) {
-                    try {
-                        imageBuffer = await sharp(data, {animated: true, pages: 1})
-                            .png()
-                            .flatten()
-                            .toBuffer();
-                    } catch (e) {
-                        // fallback: try reading as non-animated
-                        imageBuffer = await sharp(data)
-                            .png()
-                            .flatten()
-                            .toBuffer();
-                    }
-                }
+                const imageBuffer = await this._bufferImage(data, ext);
+                if (!imageBuffer) continue;
 
                 // maintain images in ratio
                 const meta = await sharp(imageBuffer).metadata();
@@ -589,6 +596,44 @@ class PDFRenderer {
             } catch (e) {
                 console.warn(`Could not add image ${filename}`, e.message);
             }
+        }
+    }
+
+    /**
+     * Attempts to convert any supported image format to a static PNG buffer.
+     * Explicitly filters out common non-image file types.
+     * @param {Buffer<ArrayBufferLike>} buffer - The file buffer.
+     * @param {string} ext - The file extension (e.g., ".jpg").
+     * @returns {Promise<Buffer|null>} PNG buffer or null if unsupported/failed.
+     */
+    async _bufferImage(buffer, ext) {
+        if (!buffer && !ext) return null;
+
+        const nonImageExtensions = [
+            // Videos
+            ".mp4", ".3gp", ".mov", ".m4v", ".avi", ".mkv",
+
+            // Audio
+            ".opus", ".m4a", ".aac", ".mp3", ".amr", ".ogg", ".wav", ".flac",
+
+            // Documents/Other (PDF, Office, Text, VCF contact cards, Archives)
+            ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".vcf", ".zip", ".rar", ".7z"
+        ];
+        if (nonImageExtensions.includes(ext)) return null;
+
+        let sharpInstance;
+        if ([".gif", ".webp"].includes(ext)) {
+            sharpInstance = sharp(buffer, {animated: true, pages: 1});
+        } else {
+            sharpInstance = sharp(buffer);
+        }
+
+        try {
+            return await sharpInstance
+                .jpeg()
+                .toBuffer();
+        } catch (e) {
+            return null;
         }
     }
 }

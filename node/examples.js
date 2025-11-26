@@ -1,74 +1,107 @@
+const fs = require("fs");
+const path = require("path");
 const WhatsAppParser = require("./parser");
 const PDFRenderer = require("./renderer");
-const {loadTheme} = require("./utils");
-const path = require("path");
+const { loadTheme, formatFileSize } = require("./utils");
+const WhatsApp2PDF = require("./index");
+
+const input = path.join(__dirname, "../assets/example/%.zip");
+const output = path.join(__dirname, "../assets/output/%.pdf");
+const themes = path.join(__dirname, "../assets/themes/%/%.json");
 
 /**
  * Example 1: Basic conversion with light theme
  */
 async function example1_basic() {
-    const theme = loadTheme(path.join(__dirname, "../assets/themes/light/light.json"));
-    const parser = new WhatsAppParser("../assets/example/chat01.zip");
+    const theme = loadTheme(themes.replaceAll("%", "light"));
+    const outputPath = output.replace("%", "example_01_basic");
+    const parser = new WhatsAppParser(input.replace("%", "chat01"));
     const chatData = await parser.parse();
 
     const renderer = new PDFRenderer(theme);
     await renderer.render({
         chatData,
-        outputPath: path.join(__dirname, "../assets/output/example_01_basic.pdf"),
+        outputPath: outputPath,
         mainUser: chatData.contacts[0],
         sealContacts: false,
         includeImages: false
     });
 
-    console.log("Generated: example1_basic.pdf\n");
+    console.log(`Generated: example1_basic.pdf (${formatFileSize(fs.statSync(outputPath).size)})\n`);
+}
+async function example11_basic() {
+    const result = await WhatsApp2PDF(input.replace("%", "chat01"))
+        .output(output.replace("%", "example_01_basic"))
+        .convert();
+
+    console.log(`Generated: ${result.fileName} (${result.fileSizeFormatted})\n`);
 }
 
 /**
  * Example 2: Dark theme with custom main user
  */
 async function example2_darkTheme() {
-    const theme = loadTheme(path.join(__dirname, "../assets/themes/dark/dark.json"));
-    const parser = new WhatsAppParser("../assets/example/chat01.zip");
+    const theme = loadTheme(themes.replaceAll("%", "dark"));
+    const outputPath = output.replace("%", "example_02_dark");
+    const parser = new WhatsAppParser(input.replace("%", "chat01"));
     const chatData = await parser.parse();
 
     const renderer = new PDFRenderer(theme);
     await renderer.render({
         chatData,
-        outputPath: path.join(__dirname, "../assets/output/example_02_dark.pdf"),
+        outputPath: outputPath,
         mainUser: "Alice", // Specify main user
         sealContacts: false,
         includeImages: false
     });
 
-    console.log("Generated: example2_dark.pdf\n");
+    console.log(`Generated: example2_dark.pdf (${formatFileSize(fs.statSync(outputPath).size)})\n`);
+}
+async function example12_darkTheme() {
+    const result = await WhatsApp2PDF(input.replace("%", "chat01"))
+        .theme("dark")
+        .output(output.replace("%", "example_02_dark"))
+        .convert();
+
+    console.log(`Generated: ${result.fileName} (${result.fileSizeFormatted})\n`);
 }
 
 /**
  * Example 3: Privacy mode (sealed contacts)
  */
 async function example3_privacyMode() {
-    const theme = loadTheme(path.join(__dirname, "../assets/themes/dark/dark.json"));
-    const parser = new WhatsAppParser("../assets/example/chat01.zip");
+    const theme = loadTheme(themes.replaceAll("%", "dark"));
+    const outputPath = output.replace("%", "example_03_privacy");
+    const parser = new WhatsAppParser(input.replace("%", "chat01"));
     const chatData = await parser.parse();
 
     const renderer = new PDFRenderer(theme);
     await renderer.render({
         chatData,
-        outputPath: path.join(__dirname, "../assets/output/example_03_privacy.pdf"),
+        outputPath: outputPath,
         mainUser: chatData.contacts[0],
         sealContacts: true, // Enable privacy mode
         includeImages: false
     });
 
-    console.log("Generated: example3_privacy.pdf (all names hidden)\n");
+    console.log(`Generated: example3_privacy.pdf (${formatFileSize(fs.statSync(outputPath).size)})\n`);
+}
+async function example13_privacyMode() {
+    const result = await WhatsApp2PDF(input.replace("%", "chat01"))
+        .seal()
+        .output(output.replace("%", "example_03_privacy"))
+        .convert();
+
+    console.log(`Generated: ${result.fileName} (${result.fileSizeFormatted})\n`);
 }
 
 /**
  * Example 4: Include images
  */
 async function example4_withImages() {
-    const theme = loadTheme(path.join(__dirname, "../assets/themes/light/light.json"));
-    const parser = new WhatsAppParser("../assets/example/chat01.zip");
+    const theme = loadTheme(themes.replaceAll("%", "light"));
+    const outputPath = output.replace("%", "example_04_images");
+    const parser = new WhatsAppParser(input.replace("%", "chat01"));
     const chatData = await parser.parse();
 
     console.log(`Found ${Object.keys(chatData.mediaFiles).length} media files`);
@@ -76,24 +109,35 @@ async function example4_withImages() {
     const renderer = new PDFRenderer(theme);
     await renderer.render({
         chatData,
-        outputPath: path.join(__dirname, "../assets/output/example_04_images.pdf"),
+        outputPath: outputPath,
         mainUser: chatData.contacts[0],
         sealContacts: false,
         includeImages: true // Include images at end
     });
 
-    console.log("Generated: example4_images.pdf\n");
+    console.log(`Generated: example4_images.pdf (${formatFileSize(fs.statSync(outputPath).size)})\n`);
+}
+async function example14_withImages() {
+    const result = await WhatsApp2PDF(input.replace("%", "chat01"))
+        .images()
+        .output(output.replace("%", "example_04_images"))
+        .convert();
+
+    console.log(`Found ${result.media} media files`);
+    console.log(`Generated: ${result.fileName} (${result.fileSizeFormatted})\n`);
 }
 
 /**
  * Example 5: Custom theme
  */
 async function example5_customTheme() {
-    // Create custom theme
-    const customTheme = {
+    const outputPath = output.replace("%", "example_05_custom");
+    const parser = new WhatsAppParser(input.replace("%", "chat01"));
+    const chatData = await parser.parse();
+
+    const renderer = new PDFRenderer({
         background_color: "#F0F8FF", // Alice Blue
         background_image: "",
-        datetime_text: "#708090",
         bubble: {
             main_user: "#FFE4B5", // Moccasin
             other_user: "#E0FFFF", // Light Cyan
@@ -116,51 +160,96 @@ async function example5_customTheme() {
             margin_top: 80,
             margin_bottom: 80
         }
-    };
-
-    const parser = new WhatsAppParser("../assets/example/chat01.zip");
-    const chatData = await parser.parse();
-
-    const renderer = new PDFRenderer(customTheme);
+    });
     await renderer.render({
         chatData,
-        outputPath: path.join(__dirname, "../assets/output/example_05_custom.pdf"),
+        outputPath: outputPath,
         mainUser: chatData.contacts[0],
         sealContacts: false,
         includeImages: false
     });
 
-    console.log("Generated: example5_custom.pdf (with custom theme)\n");
+    console.log(`Generated: example5_custom.pdf (${formatFileSize(fs.statSync(outputPath).size)})\n`);
+}
+async function example15_customTheme() {
+    const result = await WhatsApp2PDF(input.replace("%", "chat01"))
+        .theme({
+            background_color: "#F0F8FF", // Alice Blue
+            background_image: "",
+            bubble: {
+                main_user: "#FFE4B5", // Moccasin
+                other_user: "#E0FFFF", // Light Cyan
+                max_width_percent: 0.7,
+                margin_bottom: 5,
+                padding_left: 12,
+                padding_right: 12,
+                padding_top: 8,
+                padding_bottom: 8,
+                radius: 10
+            },
+            fonts: {
+                colour: "#000080", // Navy
+                family: "Helvetica",
+                size: 15
+            },
+            layout: {
+                margin_left: 100,
+                margin_right: 100,
+                margin_top: 80,
+                margin_bottom: 80
+            }
+        })
+        .output(output.replace("%", "example_05_custom"))
+        .convert();
+
+    console.log(`Generated: ${result.fileName} (${result.fileSizeFormatted})\n`);
 }
 
 /**
  * Example 6: Process multiple chats
  */
 async function example6_batchProcessing() {
-    const chatFiles = ["chat01.zip", "chat02.zip", "chat03.zip"];
-    const theme = loadTheme(path.join(__dirname, "../assets/themes/light/light.json"));
+    const chatFiles = ["chat01", "chat02", "chat03"];
+    const theme = loadTheme(themes.replaceAll("%", "light"));
 
     for (let i = 0; i < chatFiles.length; i++) {
         const chatFile = chatFiles[i];
         console.log(`Processing ${i + 1}/${chatFiles.length}: ${chatFile}...`);
 
         try {
-            const parser = new WhatsAppParser(`../assets/example/${chatFile}`);
+            const outputPath = output.replace("%", `example_06_batch_output_${i + 1}`);
+            const parser = new WhatsAppParser(input.replace("%", chatFiles));
             const chatData = await parser.parse();
 
             const renderer = new PDFRenderer(theme);
             await renderer.render({
                 chatData,
-                outputPath: path.join(__dirname, `../assets/output/example_06_batch_output_${i + 1}.pdf`),
+                outputPath: outputPath,
                 mainUser: chatData.contacts[0],
                 sealContacts: false,
                 includeImages: false
             });
 
-            console.log(`Generated: batch_output_${i + 1}.pdf`);
+            console.log(`Generated: batch_output_${i + 1}.pdf (${formatFileSize(fs.statSync(outputPath).size)})`);
         } catch (error) {
             console.log(`Failed: ${error.message}`);
         }
+    }
+
+    console.log("\nBatch processing complete\n");
+}
+async function example16_batchProcessing() {
+    const chatFiles = ["chat01", "chat02", "chat03"];
+
+    for (let i = 0; i < chatFiles.length; i++) {
+        const chatFile = chatFiles[i];
+        console.log(`Processing ${i + 1}/${chatFiles.length}: ${chatFile}...`);
+
+        const result = await WhatsApp2PDF(input.replace("%", chatFile))
+            .output(output.replace("%", `example_06_batch_output_${i + 1}`))
+            .convert();
+
+        console.log(`Generated: ${result.fileName} (${result.fileSizeFormatted})\n`);
     }
 
     console.log("\nBatch processing complete\n");
@@ -170,7 +259,8 @@ async function example6_batchProcessing() {
  * Example 7: Analyze chat before converting
  */
 async function example7_analysis() {
-    const parser = new WhatsAppParser("../assets/example/chat01.zip");
+    const outputPath = output.replace("%", "example_07_analyzed");
+    const parser = new WhatsAppParser(input.replace("%", "chat01"));
     const chatData = await parser.parse();
 
     // Analyze chat
@@ -208,30 +298,68 @@ async function example7_analysis() {
     }
 
     // Now generate PDF with this analysis
-    const theme = loadTheme(path.join(__dirname, "../assets/themes/dark/dark.json"));
+    const theme = loadTheme(themes.replaceAll("%", "dark"));
     const renderer = new PDFRenderer(theme);
-
     await renderer.render({
         chatData,
-        outputPath: path.join(__dirname, "../assets/output/example_07_analyzed.pdf"),
+        outputPath: outputPath,
         mainUser: chatData.contacts[0],
         sealContacts: false,
         includeImages: false
     });
 
-    console.log("\nGenerated: example7_analyzed.pdf\n");
+    console.log(`\nGenerated: example7_analyzed.pdf (${formatFileSize(fs.statSync(outputPath).size)})\n`);
+}
+async function example17_analysis() {
+    const chatData = await WhatsApp2PDF(input.replace("%", "chat01"))
+        .parse();
+
+    // Analyze chat
+    console.log("Chat Statistics:");
+    console.log(`- Total Messages: ${chatData.totalMessages}`);
+    console.log(`- Platform: ${chatData.platform}`);
+    console.log(`- Participants: ${chatData.contacts.length}`);
+    console.log(`- Media Files: ${Object.keys(chatData.mediaFiles).length}`);
+
+    // Message breakdown per user
+    const messageCount = {};
+    chatData.messages.forEach(msg => {
+        messageCount[msg.sender] = (messageCount[msg.sender] || 0) + 1;
+    });
+
+    console.log("\nMessages per participant:");
+    Object.entries(messageCount)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([sender, count]) => {
+            const percentage = ((count / chatData.totalMessages) * 100).toFixed(1);
+            console.log(`${sender}: ${count} (${percentage}%)`);
+        });
+
+    // Date range
+    const dates = chatData.messages
+        .map(m => m.parsedDatetime)
+        .filter(d => d !== null)
+        .sort((a, b) => a - b);
+
+    if (dates.length > 0) {
+        console.log(`\nDate Range:`);
+        console.log(`First: ${dates[0].toLocaleDateString()}`);
+        console.log(`Last: ${dates[dates.length - 1].toLocaleDateString()}`);
+        console.log(`Duration: ${Math.ceil((dates[dates.length - 1] - dates[0]) / (1000 * 60 * 60 * 24))} days`);
+    }
 }
 
 /**
  * Example 8: Filter messages by date range
  */
 async function example8_dateFilter() {
-    const parser = new WhatsAppParser("../assets/example/chat01.zip");
+    const outputPath = output.replace("%", "example_08_filtered");
+    const parser = new WhatsAppParser(input.replace("%", "chat01"));
     const chatData = await parser.parse();
 
     // Filter messages from last 30 days
     const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 60);
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const filteredMessages = chatData.messages.filter(msg => {
         return msg.parsedDatetime && msg.parsedDatetime >= thirtyDaysAgo;
@@ -247,25 +375,36 @@ async function example8_dateFilter() {
         totalMessages: filteredMessages.length
     };
 
-    const theme = loadTheme(path.join(__dirname, "../assets/themes/dark/dark.json"));
+    const theme = loadTheme(themes.replaceAll("%", "dark"));
     const renderer = new PDFRenderer(theme);
-
     await renderer.render({
         chatData: filteredChatData,
-        outputPath: path.join(__dirname, "../assets/output/example_08_filtered.pdf"),
+        outputPath: outputPath,
         mainUser: chatData.contacts[0],
         sealContacts: false,
         includeImages: false
     });
 
-    console.log("Generated: example8_filtered.pdf\n");
+    console.log(`Generated: example8_filtered.pdf (${formatFileSize(fs.statSync(outputPath).size)})\n`);
+}
+async function example18_dateFilter() {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const result = await WhatsApp2PDF(input.replace("%", "chat01"))
+        .searchDate(thirtyDaysAgo)
+        .output(output.replace("%", "example_08_filtered"))
+        .convert();
+
+    console.log(`Generated: ${result.fileName} (${result.fileSizeFormatted})\n`);
 }
 
 /**
  * Example 9: Search and highlight keywords
  */
 async function example9_searchKeywords() {
-    const parser = new WhatsAppParser("../assets/example/chat01.zip");
+    const outputPath = output.replace("%", "example_09_search");
+    const parser = new WhatsAppParser(input.replace("%", "chat01"));
     const chatData = await parser.parse();
 
     const keywords = ["WhatsApp", "export", "pdf"];
@@ -289,18 +428,28 @@ async function example9_searchKeywords() {
         totalMessages: matchedMessages.length
     };
 
-    const theme = loadTheme(path.join(__dirname, "../assets/themes/light/light.json"));
+    const theme = loadTheme(themes.replaceAll("%", "light"));
     const renderer = new PDFRenderer(theme);
 
     await renderer.render({
         chatData: searchChatData,
-        outputPath: path.join(__dirname, "../assets/output/example_09_search.pdf"),
+        outputPath: outputPath,
         mainUser: chatData.contacts[0],
         sealContacts: false,
         includeImages: false
     });
 
-    console.log("Generated: example9_search.pdf\n");
+    console.log(`Generated: example9_search.pdf (${formatFileSize(fs.statSync(outputPath).size)})\n`);
+}
+async function example19_searchKeywords() {
+    const keywords = ["WhatsApp", "export", "pdf"];
+
+    const result = await WhatsApp2PDF(input.replace("%", "chat01"))
+        .searchKeyword(keywords.join(","))
+        .output(output.replace("%", "example_09_search"))
+        .convert();
+
+    console.log(`Generated: ${result.fileName} (${result.fileSizeFormatted})\n`);
 }
 
 /**
@@ -317,7 +466,23 @@ async function example10_errorHandling() {
 
     try {
         // Attempt to load invalid theme
-        loadTheme(path.join(__dirname, "../assets/themes/custom/invalid.json"));
+        loadTheme(path.join(__dirname, "./assets/themes/custom/invalid.json"));
+    } catch (error) {
+        console.log("Caught error (expected):", error.message);
+    }
+
+    console.log("\nError handling working correctly\n");
+}
+async function example20_errorHandling() {
+    try {
+        await WhatsApp2PDF(input.replace("%", "non_existent"))
+    } catch (error) {
+        console.log("Caught error (expected):", error.message);
+    }
+
+    try {
+        await WhatsApp2PDF(input.replace("%", "chat01"))
+            .theme(path.join(__dirname, "./assets/themes/custom/invalid.json"))
     } catch (error) {
         console.log("Caught error (expected):", error.message);
     }
@@ -344,7 +509,17 @@ async function main() {
         "7": {name: "Chat Analysis", fn: example7_analysis},
         "8": {name: "Date Filter", fn: example8_dateFilter},
         "9": {name: "Search Keywords", fn: example9_searchKeywords},
-        "10": {name: "Error Handling", fn: example10_errorHandling}
+        "10": {name: "Error Handling", fn: example10_errorHandling},
+        "11": {name: "Basic Conversion (cli)", fn: example11_basic},
+        "12": {name: "Dark Theme (cli)", fn: example12_darkTheme},
+        "13": {name: "Privacy Mode (cli)", fn: example13_privacyMode},
+        "14": {name: "With Images (cli)", fn: example14_withImages},
+        "15": {name: "Custom Theme (cli)", fn: example15_customTheme},
+        "16": {name: "Batch Processing (cli)", fn: example16_batchProcessing},
+        "17": {name: "Chat Analysis (cli)", fn: example17_analysis},
+        "18": {name: "Date Filter (cli)", fn: example18_dateFilter},
+        "19": {name: "Search Keywords (cli)", fn: example19_searchKeywords},
+        "20": {name: "Error Handling (cli)", fn: example20_errorHandling}
     };
 
     if (!exampleNum || !examples[exampleNum]) {
@@ -380,17 +555,3 @@ async function main() {
 if (require.main === module) {
     main().catch(console.error);
 }
-
-// Export for use as module
-module.exports = {
-    example1_basic,
-    example2_darkTheme,
-    example3_privacyMode,
-    example4_withImages,
-    example5_customTheme,
-    example6_batchProcessing,
-    example7_analysis,
-    example8_dateFilter,
-    example9_searchKeywords,
-    example10_errorHandling
-};

@@ -1,4 +1,73 @@
 const fs = require("fs");
+const path = require("path");
+const https = require("https");
+const http = require("http");
+
+/**
+ * Detect HTTP/HTTPS URL
+ */
+function isURL(str) {
+    return /^https?:\/\//i.test(str);
+}
+
+/**
+ * Detect data URI Base64
+ */
+function isDataURI(str) {
+    return /^data:image\/(png|jpeg|jpg);base64,/i.test(str);
+}
+
+/**
+ * Download file as buffer
+ */
+function downloadToBuffer(url) {
+    return new Promise((resolve, reject) => {
+        const client = url.startsWith("https") ? https : http;
+
+        client.get(url, res => {
+            if (res.statusCode !== 200) {
+                reject(new Error(`HTTP ${res.statusCode} on ${url}`));
+                return;
+            }
+
+            const chunks = [];
+            res.on("data", d => chunks.push(d));
+            res.on("end", () => resolve(Buffer.concat(chunks)));
+        }).on("error", reject);
+    });
+}
+
+/**
+ * Load background image buffer for theme
+ */
+async function detectBackgroundImage(background, themePath) {
+    if (background.image) {
+        const bg = background.image.trim();
+        if (isDataURI(bg)) {
+            const regex = /^data:image\/(png|jpeg|jpg);base64,/i
+            const base64Data = bg.replace(regex, "");
+            const match = bg.match(regex);
+            background.image = Buffer.from(base64Data, "base64");
+            background.ext = match ? `.${match[1].toLowerCase()}` : null;
+        } else if (isURL(bg)) {
+            const urlObj = new URL(bg);
+            background.image = await downloadToBuffer(bg);
+            background.ext = path.extname(urlObj.pathname).toLowerCase();
+        } else {
+            let fullPath = bg;
+
+            // If path is relative, resolve relative to theme.json
+            if (!path.isAbsolute(bg)) fullPath = path.resolve(path.dirname(themePath), bg);
+
+            if (!fs.existsSync(fullPath)) throw new Error(`Theme background image not found: ${fullPath}`);
+
+            background.image = fs.readFileSync(fullPath);
+            background.ext = path.extname(bg).toLowerCase();
+        }
+    }
+
+    return background;
+}
 
 /**
  * Load theme configuration from JSON file
@@ -7,13 +76,12 @@ function loadTheme(themePath) {
     try {
         const data = fs.readFileSync(themePath, "utf8");
         const theme = JSON.parse(data);
+        theme.path = themePath;
 
         // Validate theme structure
         const required = ["background_color", "bubble", "fonts", "layout"];
         for (const key of required) {
-            if (!theme[key]) {
-                throw new Error(`Missing required theme property: ${key}`);
-            }
+            if (!theme[key]) throw new Error(`Missing required theme property: ${key}`);
         }
 
         return theme;
@@ -29,29 +97,20 @@ function detectPlatform(chatText) {
     // iOS typically uses 12-hour format with AM/PM
     // Android typically uses 24-hour format
     const lines = chatText.split("\n").slice(0, 100); // Check first 100 lines
-
-    let amPmCount = 0;
-    let has24Hour = false;
+    let amPmCount = 0, has24Hour = false;
 
     for (const line of lines) {
-        if (line.includes(" AM") || line.includes(" PM")) {
-            amPmCount++;
-        }
+        if (line.includes(" AM") || line.includes(" PM")) amPmCount++;
+
         // Check for times like 13:00 or higher (24-hour format)
-        if (/\s(1[3-9]|2[0-3]):\d{2}/.test(line)) {
-            has24Hour = true;
-        }
+        if (/\s(1[3-9]|2[0-3]):\d{2}/.test(line)) has24Hour = true;
     }
 
     // If we find AM/PM more than a few times, it's likely iOS
-    if (amPmCount > 3) {
-        return "iOS";
-    }
+    if (amPmCount > 3) return "iOS";
 
     // If we find 24-hour times, it's likely Android
-    if (has24Hour) {
-        return "Android";
-    }
+    if (has24Hour) return "Android";
 
     // Default to Android if unclear
     return "Android";
@@ -129,15 +188,15 @@ function detectMessageType(chatText) {
     const omitted = chatText.match(/<Media omitted>\n*/i);
     if (omitted) {
         type = "media_omitted";
-        const remainText = omitted.input.replace(omitted[0], "").trim().split(/\r?\n/)
+        const remainText = omitted.input.replace(omitted[0], "").trim().split(/\r?\n/);
         if (remainText[0]) {
             const fileMatch = remainText[0].match(filePattern2);
-            const filename = fileMatch ? fileMatch[0] : ""
+            const filename = fileMatch ? fileMatch[0] : "";
 
-            return {type, text: remainText.slice(1).join("\n").trim(), filename}
+            return {type, text: remainText.slice(1).join("\n").trim(), filename};
         } else {
             // reset the text
-            content = ""
+            content = "";
         }
     }
 
@@ -152,36 +211,10 @@ function detectMessageType(chatText) {
         else if (chatText.startsWith("IMG-")) type = "image";
         else if (chatText.startsWith("STK-")) type = "sticker";
 
-        return {type, text: remainText, filename}
+        return {type, text: remainText, filename};
     }
 
-    return {type, text: content}
-}
-
-/**
- * Mask text for privacy mode
- */
-function maskText(text, maskChar = "█") {
-    return maskChar.repeat(Math.min(text.length, 50));
-}
-
-/**
- * Sort messages chronologically
- */
-function sortMessagesByDate(messages) {
-    return messages.sort((a, b) => {
-        const dateA = a.parsedDatetime || new Date(0);
-        const dateB = b.parsedDatetime || new Date(0);
-        return dateA - dateB;
-    });
-}
-
-/**
- * Sanitize filename for safe file system usage
- */
-function sanitizeFilename(filename) {
-    const invalidChars = /[<>:"/\\|?*]/g;
-    return filename.replace(invalidChars, "_");
+    return {type, text: content};
 }
 
 /**
@@ -199,11 +232,9 @@ function formatFileSize(bytes) {
 
 module.exports = {
     loadTheme,
+    detectBackgroundImage,
     detectPlatform,
     parseDateTime,
     detectMessageType,
-    maskText,
-    sortMessagesByDate,
-    sanitizeFilename,
     formatFileSize
 };

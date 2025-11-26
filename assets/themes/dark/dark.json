@@ -1,6 +1,6 @@
 {
   "background_color": "#0A1014",
-  "background_image": "../assets/themes/dark/dark.png",
+  "background_image": "./dark.png",
   "bubble": {
     "color": "#144D37",
     "color_other": "#233138",

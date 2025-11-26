@@ -33,6 +33,7 @@ yarn.lock
 coverage/
 .nyc_output/
 .eslintcache/
+*.map
 
 # Build output
 build/
@@ -55,3 +56,11 @@ bin/
 
 # Environment files
 .env
+
+# Development & test files
+test.js
+examples.js
+assets/
+
+# Test outputs
+*.pdf

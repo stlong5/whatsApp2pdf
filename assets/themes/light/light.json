@@ -1,6 +1,6 @@
 {
   "background_color": "#EAE6DF",
-  "background_image": "../assets/themes/light/light.png",
+  "background_image": "./light.png",
   "bubble": {
     "color": "#D9FDD3",
     "color_other": "#FFFFFF",

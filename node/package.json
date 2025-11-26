@@ -1,28 +1,74 @@
 {
-  "name": "whatsapp-to-pdf",
+  "name": "whatsapp2pdf",
   "version": "1.0.0",
-  "description": "Convert WhatsApp chat exports to PDF",
+  "description": "Convert WhatsApp chat export to PDF File",
   "main": "index.js",
   "bin": {
-    "whatsapp-pdf": "./index.js"
+    "whatsapp-pdf": "./cli.js",
+    "whatsapp2pdf": "./cli.js"
   },
   "scripts": {
-    "start": "node index.js",
-    "test": "node test.js"
+    "start": "node cli.js",
+    "test": "node test.js",
+    "copy-assets": "node scripts/copy-assets.js",
+    "prepublishOnly": "npm run copy-assets && npm test",
+    "clean": "node -e \"require('fs').rmSync('assets/', { recursive: true, force: true });\"",
+    "sync": "npm run clean && npm run copy-assets"
   },
+  "files": [
+    "cli.js",
+    "index.js",
+    "parser.js",
+    "renderer.js",
+    "utils.js",
+    "assets/"
+  ],
   "dependencies": {
-    "adm-zip": "0.5.16",
-    "commander": "14.0.1",
-    "pdfkit": "0.17.2",
-    "sharp": "0.34.5"
+    "adm-zip": "^0.5.16",
+    "commander": "^14.0.1",
+    "pdfkit": "^0.17.2",
+    "sharp": "^0.34.5"
   },
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
   "keywords": [
     "whatsapp",
     "pdf",
     "chat",
     "export",
-    "converter"
+    "converter",
+    "archive",
+    "backup",
+    "messages",
+    "whatsapp-export",
+    "chat-to-pdf",
+    "whatsapp-backup"
   ],
-  "author": "stlong5",
-  "license": "MIT"
+  "author": {
+    "name": "stlong5",
+    "url": "https://github.com/stlong5"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stlong5/whatsApp2pdf.git",
+    "directory": "node"
+  },
+  "bugs": {
+    "url": "https://github.com/stlong5/whatsApp2pdf/issues"
+  },
+  "homepage": "https://github.com/stlong5/whatsApp2pdf#readme",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/stlong5"
+  }
 }
