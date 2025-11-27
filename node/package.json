@@ -1,6 +1,6 @@
 {
   "name": "whatsapp2pdf",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Convert WhatsApp chat export to PDF File",
   "type": "commonjs",
   "main": "index.js",

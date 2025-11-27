@@ -10,7 +10,7 @@ const program = new Command();
 program
     .name("whatsapp-pdf")
     .description("Convert WhatsApp chat export to PDF File")
-    .version("1.0.0")
+    .version("1.0.1")
     .option("--list-themes", "List available built-in themes")
     .argument("[input]", "Path to WhatsApp exported ZIP file")
     .option("-o, --output <path>", "Output PDF file path")
