@@ -1,6 +1,6 @@
 # WhatsApp2PDF (Node.js)
 
-[![node](https://img.shields.io/badge/node-%3E=18.7-blue)]
+![node](https://img.shields.io/badge/node-%3E=18.7-blue)
 [![npm version](https://badge.fury.io/js/whatsapp2pdf.svg)](https://www.npmjs.com/package/whatsapp2pdf)
 [![npm downloads](https://img.shields.io/npm/dm/whatsapp2pdf.svg)](https://www.npmjs.com/package/whatsapp2pdf)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
