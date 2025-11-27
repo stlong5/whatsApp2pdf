@@ -67,12 +67,12 @@ assets/
 
 MIT © [stlong5](https://github.com/stlong5)
 
-## 📮 Support
+## ⭐ Support
 
-- 🐛 [Report Bug](https://github.com/stlong5/whatsApp2pdf/issues)
-- 💡 [Request Feature](https://github.com/stlong5/whatsApp2pdf/issues)
-- ⭐ [Star on GitHub](https://github.com/stlong5/whatsApp2pdf)
+If this project saves your time, consider:
 
----
+- ⭐ Starring the repo
+- 🔗 Sharing with friends
+- ☕ Supporting via GitHub Sponsor
 
 **Made with ❤️ for preserving memories**
