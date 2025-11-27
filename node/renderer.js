@@ -436,10 +436,11 @@ class PDFRenderer {
 
         if (this.charCache[key]) return this.charCache[key];
 
-        doc.font(fontKey);
+        const needSwitch = fontKey !== this.fonts.family;
+        if (needSwitch) doc.font(fontKey);
         const width = doc.widthOfString(text);
         this.charCache[key] = {width, fontKey};
-        doc.font(this.fonts.family);
+        if (needSwitch) doc.font(this.fonts.family);
 
         return {width, fontKey};
     }

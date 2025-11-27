@@ -2,7 +2,11 @@
   "name": "whatsapp2pdf",
   "version": "1.0.0",
   "description": "Convert WhatsApp chat export to PDF File",
+  "type": "commonjs",
   "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
   "bin": {
     "whatsapp-pdf": "./cli.js",
     "whatsapp2pdf": "./cli.js"
@@ -29,11 +33,8 @@
     "pdfkit": "^0.17.2",
     "sharp": "^0.34.5"
   },
-  "devDependencies": {
-    "eslint": "^8.57.0"
-  },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.7.0"
   },
   "os": [
     "darwin",
@@ -51,7 +52,10 @@
     "messages",
     "whatsapp-export",
     "chat-to-pdf",
-    "whatsapp-backup"
+    "whatsapp-backup",
+    "pdf-generator",
+    "data-backup",
+    "chat-history"
   ],
   "author": {
     "name": "stlong5",
