@@ -1,32 +1,47 @@
 {
   "name": "whatsapp2pdf",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Convert WhatsApp chat export to PDF File",
-  "type": "commonjs",
-  "main": "index.js",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./index.js"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
   "bin": {
-    "whatsapp-pdf": "./cli.js",
-    "whatsapp2pdf": "./cli.js"
+    "whatsapp-pdf": "./dist/cli.js",
+    "whatsapp2pdf": "./dist/cli.js"
   },
   "scripts": {
-    "start": "node cli.js",
-    "test": "node test.js",
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "test": "node dist/test.js",
+    "example": "node --no-warnings --import ./scripts/ts-register.mjs example/index.ts",
     "copy-assets": "node scripts/copy-assets.js",
-    "prepublishOnly": "npm run copy-assets && npm test",
-    "clean": "node -e \"require('fs').rmSync('assets/', { recursive: true, force: true });\"",
-    "sync": "npm run clean && npm run copy-assets"
+    "prepublishOnly": "npm run build && npm run copy-assets && npm test",
+    "clean": "node -e \"require('fs').rmSync('dist/', { recursive: true, force: true }); require('fs').rmSync('assets/', { recursive: true, force: true });\"",
+    "sync": "npm run clean && npm run copy-assets",
+    "lint": "eslint --ext .ts .",
+    "lint:fix": "eslint --ext .ts . --fix"
   },
   "files": [
-    "cli.js",
-    "index.js",
-    "parser.js",
-    "renderer.js",
-    "utils.js",
+    "dist/",
     "assets/"
   ],
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.7",
+    "@types/node": "^24.10.1",
+    "@types/pdfkit": "^0.17.3",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
+    "eslint": "^9.39.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
   "dependencies": {
     "adm-zip": "^0.5.16",
     "commander": "^14.0.1",

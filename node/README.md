@@ -5,7 +5,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/whatsapp2pdf.svg)](https://www.npmjs.com/package/whatsapp2pdf)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Transform your WhatsApp conversations into beautiful, shareable PDF documents.**
+**Transform WhatsApp messages into beautiful, printable PDF documents (with TypeScript support).**
 
 Convert WhatsApp chat exports (Android & iOS) into professional PDF files with authentic WhatsApp styling, emoji
 support, themes, and media attachments. Perfect for preserving memories, creating archives, or sharing conversations.
@@ -68,10 +68,10 @@ whatsapp2pdf --help
 | `-p, --privacy`            | Hide contact names      | `true`         |
 | `-i, --images`             | Include attachments     | `true`         |
 | `-t, --theme <name>`       | Theme: `light` / `dark` | `light`        |
-| `--theme-path <json>`      | Load custom theme JSON  | ""             |
-| `-s, --start <YYYY-MM-DD>` | Filter start date       | ""             |
-| `-e, --end <YYYY-MM-DD>`   | Filter end date         | ""             |
-| `-k, --keyword <word>`     | Keyword filter          | ""             |
+| `--theme-path <json>`      | Load custom theme JSON  | -              |
+| `-s, --start <YYYY-MM-DD>` | Filter start date       | -              |
+| `-e, --end <YYYY-MM-DD>`   | Filter end date         | -              |
+| `-k, --keyword <word>`     | Keyword filter          | -              |
 | `-v, --verbose`            | Debug info              | -              |
 | `-h, --help`               | Show help               | -              |
 | `-V, --version`            | Show version            | -              |
@@ -112,8 +112,7 @@ await WhatsApp2PDF("./chat.zip")
 
 ### 🛠️ Static Methods
 
-**`WhatsApp2PDF.listThemes()`** - Get available themes  
-**`WhatsApp2PDF.loadTheme(path)`** - Load theme file
+**`WhatsApp2PDF.listThemes()`** - Get available themes
 
 ---
 
@@ -140,9 +139,6 @@ await WhatsApp2PDF("./chat.zip")
 ### Media Support
 
 - 🖼️ Images (JPG, PNG, GIF, WebP, HEIC, AVIF)
-- 🎥 Videos (MP4, 3GP, MOV)
-- 🎵 Audio (Opus, M4A, AAC, MP3)
-- 📄 Documents (PDF, Office files)
 
 ### Multi-Language Support
 

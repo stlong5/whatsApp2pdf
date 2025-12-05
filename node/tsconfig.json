@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    /* Modules and compilation targets */
+    "target": "ES2022",                             /* Target JavaScript version, compatible with Node.js >= 18.7.0 */
+    "module": "NodeNext",                           /* Module system: Consistent with "type": "module" in package.json */
+    "esModuleInterop": true,                        /* Enables non-default export and import, simplifying the use of require/import. */
+    "moduleResolution": "nodenext",                 /* Module resolution strategy: Using Node.js */
+
+    /* Source code, output, and type declarations */
+    "rootDir": "./src",                             /* Source code directory */
+    "outDir": "./dist",                             /* Compilation output directory */
+    "declaration": true,                            /* Core: Generating .d.ts type declaration files */
+    "declarationDir": "./dist",                     /* Core: Output the .d.ts file to the dist directory. */
+
+    /* Strict type checking */
+    "strict": true,                                 /* Enable all strict type checking options */
+    "skipLibCheck": true,                           /* Skip type checking of third-party library declaration files */
+    "forceConsistentCasingInFileNames": true,       /* Force filenames to be case-sensitive */
+
+    /* Other */
+    "resolveJsonModule": true,                      /* Allow importing .json files */
+  },
+  "include": [
+    "src",                                          /* Includes all files in the src directory. */
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

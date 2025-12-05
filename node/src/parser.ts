@@ -1,16 +1,15 @@
-const AdmZip = require("adm-zip");
-const { detectPlatform, parseDateTime, detectMessageType } = require("./utils");
+import AdmZip from "adm-zip"
+import {detectPlatform, parseDateTime, detectMessageType} from "./utils.js";
+import {ChatData, Message, Platform} from "./types/index.js";
 
-class WhatsAppParser {
-    constructor(zipPath) {
-        this.zipPath = zipPath;
-        this.platform = null;
-        this.chatText = null;
-        this.mediaFiles = {};
-    }
+export class WhatsAppParser {
+    private readonly zipPath: string;
+    private platform: Platform;
+    private chatText: string;
+    private mediaFiles: Record<string, Buffer>;
 
     // Regex patterns for different formats
-    static PATTERNS = {
+    private static  PATTERNS: { standard: RegExp, ios: RegExp } = {
         // [DD/MM/YYYY, HH:MM:SS] or [DD/MM/YYYY, HH:MM] format
         standard: /^\[?(\d{1,2}\/\d{1,2}\/\d{2,4},?\s+\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AP]M)?)\]?\s*[-:]?\s*([^:]+?):\s*(.+)$/,
         // M/D/YY, H:MM AM/PM format (iOS)
@@ -18,7 +17,7 @@ class WhatsAppParser {
     };
 
     // Define common WhatsApp media and document extensions
-    static MEDIA_EXTENSIONS = [
+    private static MEDIA_EXTENSIONS: string[] = [
         // Images (Common & Sharp-supported - JPG, PNG, GIF, WebP, TIFF, SVG, HEIC, AVIF, BMP)
         ".jpg", ".jpeg", ".png", ".gif", ".webp", ".tif", ".tiff", ".heic", ".heif", ".avif", ".svg", ".bmp",
 
@@ -32,7 +31,14 @@ class WhatsAppParser {
         ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".vcf", ".zip", ".rar", ".7z"
     ];
 
-    async parse() {
+    constructor(zipPath: string) {
+        this.zipPath = zipPath;
+        this.platform = null;
+        this.chatText = "";
+        this.mediaFiles = {};
+    }
+
+    async parse(): Promise<ChatData> {
         try {
             // Extract ZIP contents
             this._extractZip();
@@ -57,23 +63,27 @@ class WhatsAppParser {
                 mediaFiles: this.mediaFiles,
                 totalMessages: messages.length
             };
-        } catch (error) {
-            throw new Error(`Parser error: ${error.message}`);
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                throw new Error(`Parser error: ${e.message}`);
+            } else {
+                throw new Error(`Parser error: ${String(e)}`);
+            }
         }
     }
 
-    _extractZip() {
+    private _extractZip() {
         try {
-            const zip = new AdmZip(this.zipPath);
-            const zipEntries = zip.getEntries();
+            const zip: AdmZip = new AdmZip(this.zipPath);
+            const zipEntries: AdmZip.IZipEntry[] = zip.getEntries();
 
             // Initialize chatText to null/undefined before the loop
-            this.chatText = null;
+            this.chatText = "";
 
             for (const entry of zipEntries) {
                 // Use the original entryName for key in mediaFiles, but check lowercase for logic
-                const originalFileName = entry.entryName;
-                const lowerFileName = originalFileName.toLowerCase();
+                const originalFileName: string = entry.entryName;
+                const lowerFileName: string = originalFileName.toLowerCase();
 
                 // Skip directories and artifacts (__MACOSX, etc.)
                 if (entry.isDirectory || lowerFileName.startsWith("__")) continue;
@@ -90,8 +100,12 @@ class WhatsAppParser {
                     try {
                         // Store the file content as a Buffer. The key is the original file name.
                         this.mediaFiles[originalFileName] = entry.getData();
-                    } catch (e) {
-                        console.warn(`Warning: Could not extract media: ${originalFileName} - ${e.message}`);
+                    } catch (e: unknown) {
+                        if (e instanceof Error) {
+                            console.warn(`Warning: Could not extract media: ${originalFileName} - ${e.message}`);
+                        } else {
+                            console.error(`Error: Could not extract media: ${originalFileName} - ${String(e)}`);
+                        }
                     }
                 }
             }
@@ -100,17 +114,21 @@ class WhatsAppParser {
             if (!this.chatText) {
                 throw new Error("No main chat text file found in ZIP. Check export format.");
             }
-        } catch (error) {
-            throw new Error(`Failed to extract ZIP: ${error.message}`);
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                throw new Error(`Failed to extract ZIP: ${e.message}`);
+            } else {
+                throw new Error(`Failed to extract ZIP: ${String(e)}`);
+            }
         }
     }
 
-    _parseMessages() {
-        const messages = [];
-        const lines = this.chatText.split(/\r?\n/);
+    private _parseMessages(): Message[] {
+        const messages: Message[] = [];
+        const lines: string[] = this.chatText.split(/\r?\n/);
 
-        let currentMessage = null;
-        let lineNumber = 0;
+        let currentMessage: Message | null = null;
+        let lineNumber: number = 0;
 
         for (let line of lines) {
             lineNumber++;
@@ -133,7 +151,6 @@ class WhatsAppParser {
                 currentMessage = {
                     datetime: datetime.trim(),
                     sender: sender.trim(),
-                    text: text,
                     parsedDatetime: parseDateTime(datetime.trim()),
                     lineNumber,
                     ...detectMessageType(text.trim())
@@ -153,5 +170,3 @@ class WhatsAppParser {
         return messages;
     }
 }
-
-module.exports = WhatsAppParser;

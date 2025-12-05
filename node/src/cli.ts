@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 
-const {Command} = require("commander");
-const fs = require("fs");
-const path = require("path");
-const WhatsApp2PDF = require("./index");
+import * as fs from "fs";
+import * as path from "path";
+import {Command} from "commander";
+import {WhatsApp2PDF, listThemes} from "./index.js";
+import {CliOptions} from "./types/index.js";
 
 const program = new Command();
 
 program
     .name("whatsapp-pdf")
     .description("Convert WhatsApp chat export to PDF File")
-    .version("1.0.1")
+    .version("1.1.0")
     .option("--list-themes", "List available built-in themes")
     .argument("[input]", "Path to WhatsApp exported ZIP file")
     .option("-o, --output <path>", "Output PDF file path")
@@ -23,12 +24,12 @@ program
     .option("-e, --end <date>", "Search: end date YYYY-MM-DD")
     .option("-k, --keyword <word>", "Search: messages containing keyword")
     .option("-v, --verbose", "Enable verbose mode", true)
-    .action(async (input, options) => {
+    .action(async (input: string | undefined, options: CliOptions) => {
         try {
             // Handle --list-themes option
             if (options.listThemes) {
                 console.log("\n📋 Available built-in themes:");
-                WhatsApp2PDF.listThemes().forEach(theme => {
+                listThemes().forEach((theme: string) => {
                     console.log(`   ✅  ${theme}`);
                 });
 
@@ -53,14 +54,11 @@ program
 
             // Parse WhatsApp export
             console.log("\n📄 Parsing WhatsApp export...");
-            let parser = new WhatsApp2PDF(inputPath);
+            const parser = WhatsApp2PDF(inputPath);
 
             // Build parser instance
-            if (options.themePath) {
-                parser.theme(options.themePath);
-            } else if (options.theme) {
-                parser.theme(options.theme);
-            }
+            if (options.theme) parser.theme(options.theme);
+            else if (options.themePath) parser.theme(options.themePath);
             if (options.output) parser.output(options.output);
             if (options.mainUser) parser.mainUser(options.mainUser);
             if (options.privacy) parser.seal(true);
@@ -75,8 +73,12 @@ program
             console.log(`\n✅ PASSED: PDF generated (${result.fileSizeFormatted})!`);
             console.log(`📄 Output: ${result.outputPath}`);
             console.timeEnd("⏱ Time");
-        } catch (error) {
-            console.error(`\n❌ Error: ${error.message}`);
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                console.error(`\n❌ Error: ${e.message}`);
+            } else {
+                console.error(`\n❌ Error: ${String(e)}`);
+            }
             process.exit(1);
         }
     });

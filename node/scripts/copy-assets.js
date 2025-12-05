@@ -5,14 +5,13 @@
  * This script is run before `npm publish` via prepublishOnly
  */
 
-const fs = require("fs");
-const path = require("path");
+import * as fs from "fs";
+import * as path from "path";
+import {fileURLToPath} from "url";
 
-const NODE_DIR = path.join(__dirname, "..");
-const PROJECT_ROOT = path.join(NODE_DIR, "..");
-
-const SOURCE_ASSETS = path.join(PROJECT_ROOT, "assets");
-const DEST_ASSETS = path.join(NODE_DIR, "assets");
+const NODE_DIR = path.dirname(fileURLToPath(import.meta.url));
+const SOURCE_ASSETS = path.join(NODE_DIR, "../../assets");
+const DEST_ASSETS = path.join(NODE_DIR, "../assets");
 
 // Folders to exclude (dev-only)
 const EXCLUDE_FOLDERS = ["example", "output"];
