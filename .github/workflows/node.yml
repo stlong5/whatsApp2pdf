@@ -1,0 +1,84 @@
+name: Nodejs
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'node/**'
+      - 'node/package.json'
+      - 'node/package-lock.json'
+      - 'node/tsconfig.json'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'node/**'
+      - 'node/package.json'
+      - 'node/package-lock.json'
+      - 'node/tsconfig.json'
+
+jobs:
+  # Check files that should not be committed (only run during PRs, as pushes to the main branch are usually the result of merges).
+  check-ignored-files:
+    name: 🚫 Check for Ignored Files
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: ⬇️ Checkout Repository
+        uses: actions/checkout@v4
+        # The target branch of the pull request must be obtained before a diff comparison can be performed.
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: 🔍 Find Unexpected Files in dist/ or assets/
+        id: check_files
+        # Use `git diff` to check if any files have been added to the `node/assets`, `node/dist`, or `node/example` directories in the current PR.
+        run: |
+          # 检查 node/assets, node/dist, node/example 目录下的文件
+          IGNORED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep -E "^node/(assets|dist|example)/")
+          
+          if [ -n "$IGNORED_FILES" ]; then
+            echo "::error file=COMMIT_WARNING::Files that should not be committed (node/assets/ or node/dist/ or node/example/) have been detected. Please use npm run build or npm run copy-assets to generate these files, or add them to .gitignore."
+            echo "Files found: $IGNORED_FILES"
+            exit 1
+          fi
+
+  # Run Lint and Test on different Node versions
+  lint-and-test:
+    name: Lint & Test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+
+    steps:
+      - name: ⬇️ Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: ⚙️ Install Dependencies (in node/ directory)
+        run: npm install
+        working-directory: ./node
+
+      - name: 🔨 Run Build (tsc)
+        # 生成 dist/ 文件
+        run: npm run build
+        working-directory: ./node
+
+      - name: 🖼️ Copy Assets
+        # 生成 assets/ 文件
+        run: npm run copy-assets
+        working-directory: ./node
+
+      - name: ✅ Run Lint
+        # Linting TypeScript 源码
+        run: npm run lint
+        working-directory: ./node
+
+      - name: 🧪 Run Tests
+        # 依赖于 dist/ 和 assets/ 文件
+        run: npm test
+        working-directory: ./node
