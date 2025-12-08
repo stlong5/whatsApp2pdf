@@ -6,14 +6,12 @@ on:
     paths:
       - 'node/**'
       - 'node/package.json'
-      - 'node/package-lock.json'
       - 'node/tsconfig.json'
   pull_request:
     branches: [ main ]
     paths:
       - 'node/**'
       - 'node/package.json'
-      - 'node/package-lock.json'
       - 'node/tsconfig.json'
 
 jobs:
@@ -31,9 +29,8 @@ jobs:
 
       - name: 🔍 Find Unexpected Files in dist/ or assets/
         id: check_files
-        # Use `git diff` to check if any files have been added to the `node/assets`, `node/dist`, or `node/example` directories in the current PR.
+        # Use `git diff` to check if any files have been added to the `node/dist`, `node/assets`, or `node/example` directories in the current PR.
         run: |
-          # 检查 node/assets, node/dist, node/example 目录下的文件
           IGNORED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep -E "^node/(assets|dist|example)/")
           
           if [ -n "$IGNORED_FILES" ]; then
@@ -64,21 +61,17 @@ jobs:
         working-directory: ./node
 
       - name: 🔨 Run Build (tsc)
-        # 生成 dist/ 文件
         run: npm run build
         working-directory: ./node
 
       - name: 🖼️ Copy Assets
-        # 生成 assets/ 文件
         run: npm run copy-assets
         working-directory: ./node
 
       - name: ✅ Run Lint
-        # Linting TypeScript 源码
         run: npm run lint
         working-directory: ./node
 
       - name: 🧪 Run Tests
-        # 依赖于 dist/ 和 assets/ 文件
         run: npm test
         working-directory: ./node
